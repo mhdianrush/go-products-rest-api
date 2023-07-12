@@ -1,6 +1,7 @@
 package controllers
 
 import (
+	"encoding/json"
 	"net/http"
 	"strconv"
 
@@ -45,7 +46,21 @@ func Find(w http.ResponseWriter, r *http.Request) {
 }
 
 func Create(w http.ResponseWriter, r *http.Request) {
+	var product entities.Product
 
+	decoder := json.NewDecoder(r.Body)
+	if err := decoder.Decode(&product); err != nil {
+		helper.ResponseError(w, http.StatusInternalServerError, err.Error())
+		return
+	}
+
+	defer r.Body.Close()
+
+	if err := config.DB.Create(&product).Error; err != nil {
+		helper.ResponseError(w, http.StatusInternalServerError, err.Error())
+		return
+	}
+	helper.ResponseJSON(w, http.StatusCreated, product)
 }
 
 func Update(w http.ResponseWriter, r *http.Request) {
