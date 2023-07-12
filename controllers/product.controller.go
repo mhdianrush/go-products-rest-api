@@ -64,9 +64,32 @@ func Create(w http.ResponseWriter, r *http.Request) {
 }
 
 func Update(w http.ResponseWriter, r *http.Request) {
+	vars := mux.Vars(r)
+	id, err := strconv.ParseInt(vars["id"], 10, 64)
+	if err != nil {
+		helper.ResponseError(w, http.StatusBadRequest, err.Error())
+		return
+	}
 
+	var product entities.Product
+
+	decoder := json.NewDecoder(r.Body)
+	if err := decoder.Decode(&product); err != nil {
+		helper.ResponseError(w, http.StatusInternalServerError, err.Error())
+		return
+	}
+	defer r.Body.Close()
+
+	if config.DB.Where("id = ?", id).Updates(&product).RowsAffected == 0 {
+		helper.ResponseError(w, http.StatusBadRequest, "can't update data")
+		return
+	}
+
+	product.Id = id
+
+	helper.ResponseJSON(w, http.StatusOK, product)
 }
 
 func Delete(w http.ResponseWriter, r *http.Request) {
-
+	
 }
