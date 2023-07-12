@@ -91,5 +91,19 @@ func Update(w http.ResponseWriter, r *http.Request) {
 }
 
 func Delete(w http.ResponseWriter, r *http.Request) {
-	
+	input := map[string]any{"id": ""}
+
+	decoder := json.NewDecoder(r.Body)
+	if err := decoder.Decode(&input); err != nil {
+		helper.ResponseError(w, http.StatusBadRequest, err.Error())
+		return
+	}
+	defer r.Body.Close()
+
+	var product entities.Product
+	if config.DB.Delete(&product, input["id"]).RowsAffected == 0 {
+		helper.ResponseError(w, http.StatusBadRequest, "can't delete the data")
+		return
+	}
+	helper.ResponseJSON(w, http.StatusOK, map[string]string{"message": "product has been deleted"})
 }
