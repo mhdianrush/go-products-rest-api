@@ -5,6 +5,7 @@ import (
 	"os"
 
 	"github.com/gorilla/mux"
+	"github.com/joho/godotenv"
 	"github.com/mhdianrush/go-products-rest-api/config"
 	"github.com/mhdianrush/go-products-rest-api/controllers"
 	"github.com/sirupsen/logrus"
@@ -13,13 +14,13 @@ import (
 func main() {
 	config.ConnectDB()
 
-	r := mux.NewRouter()
+	routes := mux.NewRouter()
 
-	r.HandleFunc("/products", controllers.Index).Methods(http.MethodGet)
-	r.HandleFunc("/product/{id}", controllers.Find).Methods(http.MethodGet)
-	r.HandleFunc("/product", controllers.Create).Methods(http.MethodPost)
-	r.HandleFunc("/product/{id}", controllers.Update).Methods(http.MethodPut)
-	r.HandleFunc("/product", controllers.Delete).Methods(http.MethodDelete)
+	routes.HandleFunc("/products", controllers.Index).Methods(http.MethodGet)
+	routes.HandleFunc("/product/{id}", controllers.Find).Methods(http.MethodGet)
+	routes.HandleFunc("/product", controllers.Create).Methods(http.MethodPost)
+	routes.HandleFunc("/product/{id}", controllers.Update).Methods(http.MethodPut)
+	routes.HandleFunc("/product", controllers.Delete).Methods(http.MethodDelete)
 
 	logger := logrus.New()
 
@@ -29,14 +30,17 @@ func main() {
 	}
 	logger.SetOutput(file)
 
-	logger.Println("Server Running on Port 8080")
+	if err := godotenv.Load(); err != nil {
+		logger.Printf("failed load env file %s", err.Error())
+	}
 
 	server := http.Server{
-		Addr:    ":8080",
-		Handler: r,
+		Addr:    ":" + os.Getenv("SERVER_PORT"),
+		Handler: routes,
 	}
-	err = server.ListenAndServe()
-	if err != nil {
-		panic(err)
+	if err = server.ListenAndServe(); err != nil {
+		logger.Printf("failed connect to server %s", err.Error())
 	}
+
+	logger.Printf("server running on port %s", os.Getenv("SERVER_PORT"))
 }
